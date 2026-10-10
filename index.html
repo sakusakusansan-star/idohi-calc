@@ -120,7 +120,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.wide{width:100%}
 .sentchk{display:flex;align-items:center;gap:8px;min-height:44px;font-weight:700}
 .sentchk input{width:24px;height:24px;accent-color:var(--ok)}
-.trip-del{text-align:right}
+.trip-del{margin-top:14px}
+.trip-head{display:flex;justify-content:flex-end;margin:0 0 10px}
+.delbtn{border:1px solid var(--err);background:var(--card);color:var(--err);border-radius:10px;min-height:44px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:.92rem}
+.delbtn.wide{width:100%}
+.delbtn[data-arm]{background:var(--err);color:#fff}
 
 /* 確認 */
 .checks{margin:0 0 16px}
@@ -297,7 +301,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     </div>
     <section class="sec">
       <h2>稼働の一覧</h2>
-      <p class="hint">押すとその稼働を開きます。赤い「未送信」が残らないようにします。</p>
+      <p class="hint">押すとその稼働を開きます。赤い「未送信」が残らないようにします。間違えて入れた稼働は、開いて右上の「この稼働を消す」で消せます。</p>
       <div class="list" id="list"></div>
       <details class="months"><summary>月の合計を見る（聞かれたとき用）</summary><div id="months"></div></details>
     </section>
@@ -597,6 +601,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     var rs=RATES.map(function(v){return '<button type="button" data-act="rate" data-v="'+v+'" aria-pressed="'+(+t.rate===v)+'">'+v+'円/km</button>';}).join('');
     var days='';for(var i=0;i<t.days.length;i++)days+=dayHTML(t,i);
     return '<article class="trip" data-trip="'+t.id+'">'
+      +'<div class="trip-head"><button type="button" class="delbtn" data-act="deltrip">🗑 この稼働を消す</button></div>'
       +'<label class="f">現場</label>'+siteSelect(t)+'<button type="button" class="linkbtn" data-act="goreg">登録した場所・距離を見る・直す</button>'
       +(form&&form.target==='site'?formHTML():'')
       +'<div class="q"><span class="f">日にち</span><div class="dayrow"><input type="date" data-f="start" value="'+esc(t.start)+'" aria-label="開始日">'
@@ -614,7 +619,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       +'<p class="dayinfo" id="photos"></p>'
       +'<div class="send"><button type="button" class="btn primary wide" data-act="copytrip">文章をコピー</button>'
       +'<label class="sentchk"><input type="checkbox" data-f="sent"'+(t.sent?' checked':'')+'>LINEに送った（写真も一緒に）</label></div>'
-      +'<div class="trip-del"><button type="button" class="del" data-act="deltrip">この稼働を消す</button></div>'
+      +'<div class="trip-del"><button type="button" class="delbtn wide" data-act="deltrip">🗑 この稼働を消す</button></div>'
       +'</article>';
   }
   function renderReg(){
