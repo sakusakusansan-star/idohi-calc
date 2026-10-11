@@ -330,19 +330,21 @@ button,input,select,textarea{font:inherit;color:inherit}
 </main>
 <div id="savest" class="savest" hidden></div>
 
+<script src="gas-client.js"></script>
 <script>
 /* GitHub Pages など GAS 以外で開いたときは、GAS のウェブアプリを fetch で呼ぶ */
 (function(){
   if (typeof google !== 'undefined' && google.script && google.script.run) return;
   var GAS_URL = 'https://script.google.com/macros/s/AKfycbx7OrhZUR7VM2onLziSwo4gqZbk_f2eT4fQBXQKpMyvopzytcuCniiDWE5eDOEUlUJqjA/exec';
+  // 使う関数（loadState / saveState / getDistance）はどれも、やり直しても結果が
+  // 変わらない（読む・丸ごと上書き・距離を調べる）ので、Google側の一時的な404は自動で再試行する。
   function runner(ok, ng) {
     return new Proxy({}, { get: function (_, name) {
       if (name === 'withSuccessHandler') return function (h) { return runner(h, ng); };
       if (name === 'withFailureHandler') return function (h) { return runner(ok, h); };
       return function () {
         var args = Array.prototype.slice.call(arguments);
-        fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ fn: name, args: args }) })
-          .then(function (r) { return r.json(); })
+        GasClient.post(GAS_URL, { fn: name, args: args }, { retry: true })
           .then(function (j) { if (j && j.ok) { if (ok) ok(j.result); } else if (ng) ng(new Error(j && j.error || 'error')); })
           .catch(function (e) { if (ng) ng(e); });
       };
@@ -387,18 +389,43 @@ button,input,select,textarea{font:inherit;color:inherit}
     return N;
   }
   function setSt(msg,bad){var el=$('savest');if(!el)return;el.hidden=!msg;el.textContent=msg||'';el.className='savest'+(bad?' bad':'');
-    clearTimeout(setSt.t);if(msg==='保存しました')setSt.t=setTimeout(function(){el.hidden=true;},1500);}
+    clearTimeout(setSt.t);if(msg==='保存しました'||msg==='別の端末の内容を読み込みました')setSt.t=setTimeout(function(){el.hidden=true;},1500);}
   var saveTimer=null,saving=false,dirty=false;
-  function save(){dirty=true;clearTimeout(saveTimer);setSt('保存待ち…');saveTimer=setTimeout(flush,800);}
+  /* ---- 端末の控え ----
+     保存は0.8秒まとめてから送るので、その間や通信中に閉じると変更が消えていた。
+     変更のたびにこの端末にも控えを残し、次に開いたときにスプレッドシートへ送り直す。 */
+  function backup(pending){try{localStorage.setItem(LS,JSON.stringify({s:S,pending:pending,base:base,t:Date.now()}));}catch(e){}}
+  function readBackup(){try{var b=JSON.parse(localStorage.getItem(LS)||'null');return b&&b.s?b:null;}catch(e){return null;}}
+  /* ---- 別の端末との上書き防止 ----
+     保存は全体を丸ごと上書きするので、スマホとPCで開いていると古い画面が新しい内容を消してしまう。
+     base＝この画面が最後に読んだ/保存したスプレッドシートの内容。保存の前に読み直し、
+     base と違っていれば（＝ほかで更新されていれば）黙って上書きせずに確かめる。 */
+  var base=null;
+  function canon(json){return JSON.stringify(parseState(json));}
+  function save(){dirty=true;backup(true);clearTimeout(saveTimer);setSt('保存待ち…');saveTimer=setTimeout(flush,800);}
   function flush(){
     if(!hasGS()){setSt('スプレッドシートにつながっていません',true);return;}
     if(saving){saveTimer=setTimeout(flush,500);return;}
     if(!dirty)return;
+    clearTimeout(saveTimer);
     dirty=false;saving=true;setSt('保存中…');
-    GS().withSuccessHandler(function(){saving=false;setSt(dirty?'保存待ち…':'保存しました');})
-      .withFailureHandler(function(){saving=false;dirty=true;setSt('保存できませんでした。もう一度試します',true);saveTimer=setTimeout(flush,5000);})
-      .saveState(JSON.stringify(S),listRows());
+    var fail=function(){saving=false;dirty=true;setSt('保存できませんでした。もう一度試します',true);saveTimer=setTimeout(flush,5000);};
+    GS().withSuccessHandler(function(json){
+        if(base!==null&&canon(json)!==base&&!confirm('別の端末（または別のタブ）でこのデータが更新されています。\n\nOK：この画面の内容で上書きする\nキャンセル：別の端末の内容を読み込み直す（この画面での変更は消えます）')){
+          saving=false;dirty=false;S=parseState(json);base=canon(json);backup(false);
+          setSt('別の端末の内容を読み込みました');renderReg();go('home');return;
+        }
+        var out=JSON.stringify(S);
+        GS().withSuccessHandler(function(){saving=false;base=canon(out);if(!dirty)backup(false);setSt(dirty?'保存待ち…':'保存しました');})
+          .withFailureHandler(fail)
+          .saveState(out,listRows());
+      })
+      .withFailureHandler(fail)
+      .loadState();
   }
+  /* 閉じる・アプリを切り替えるときは、待たずにすぐ送る。送り切れなくても控えが残る */
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&dirty&&!saving)flush();});
+  window.addEventListener('beforeunload',function(e){if(dirty||saving){e.preventDefault();e.returnValue='';}});
   function listRows(){
     return S.trips.slice().sort(function(a,b){return (a.start||'').localeCompare(b.start||'');}).map(function(t){
       var pay=t.rows.reduce(function(s,r){return s+payAmt(r);},0);
@@ -822,7 +849,16 @@ button,input,select,textarea{font:inherit;color:inherit}
   document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
   function boot(){
     if(!hasGS()){S=blank();$('loading').textContent='スプレッドシートにつながっていません（このページはApps Scriptのウェブアプリとして開いてください）';return;}
-    GS().withSuccessHandler(function(json){S=parseState(json);$('loading').hidden=true;renderReg();go('home');})
+    GS().withSuccessHandler(function(json){
+        S=parseState(json);base=canon(json);
+        var b=readBackup();
+        if(b&&b.pending){
+          /* 前回スプレッドシートへ送れなかった変更がこの端末に残っている */
+          if(b.base===base||confirm('この端末に、スプレッドシートへ保存できていない変更が残っています。\nその後ほかの端末でも更新されています。\n\nOK：この端末の変更で上書きする\nキャンセル：スプレッドシートの内容を使う（この端末の変更は捨てる）')){
+            S=parseState(JSON.stringify(b.s));save();setSt('前回保存できなかった変更を送り直しています…');
+          }else backup(false);
+        }else backup(false);
+        $('loading').hidden=true;renderReg();go('home');})
       .withFailureHandler(function(){$('loading').textContent='読み込めませんでした。ページを開き直してください';})
       .loadState();
   }
