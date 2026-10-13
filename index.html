@@ -4,41 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>移動経費かんたん計算</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#EFF1F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C1015" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="sieg-theme.css">
 <style>
 :root{
-  --bg:#EDF0F3; --card:#FFFFFF; --ink:#17222D; --sub:#5B6875; --line:#D5DBE1;
-  --accent:#1B5FBF; --accent-ink:#FFFFFF; --accent-soft:#E3ECF9;
-  --band:#173B66; --band-ink:#FFFFFF; --band-sub:#B9CCE4;
-  --ok:#1C7A4D; --okbg:#E6F4EC; --warn:#8A5200; --warnbg:#FFF3D6;
-  --err:#B3261E; --errbg:#FDECEA; --info:#2A4E7F; --infobg:#E8EFF9;
-  --field:#F6F8FA; --car:#1B5FBF; --pay:#7A4A12; --paybg:#FBF1E4;
+  /* 色は sieg-theme.css の --sg-* につなぐ（スマホのライト／ダーク設定に自動で合わせる） */
+  --bg:var(--sg-bg); --card:var(--sg-surface); --ink:var(--sg-ink); --sub:var(--sg-mute); --line:var(--sg-hair);
+  --accent:var(--sg-primary); --accent-ink:var(--sg-on-primary); --accent-soft:var(--sg-blue-tint);
+  --band:var(--sg-primary); --band-ink:var(--sg-on-primary); --band-sub:color-mix(in srgb, var(--sg-on-primary) 72%, transparent);
+  --ok:var(--sg-green); --okbg:var(--sg-green-tint); --warn:var(--sg-amber); --warnbg:var(--sg-amber-tint);
+  --err:var(--sg-red); --errbg:var(--sg-red-tint); --info:var(--sg-blue); --infobg:var(--sg-blue-tint);
+  --field:var(--sg-sunk); --car:var(--sg-blue); --pay:var(--sg-amber); --paybg:var(--sg-amber-tint);
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#11171D; --card:#19212A; --ink:#E7ECF1; --sub:#9AA7B4; --line:#2D3944;
-    --accent:#7FADF2; --accent-ink:#0C1722; --accent-soft:#1B2C44;
-    --band:#1F3F66; --band-ink:#F2F7FF; --band-sub:#A9C0DE;
-    --ok:#5FD39A; --okbg:#12301F; --warn:#F0B75A; --warnbg:#33270F;
-    --err:#FF9A90; --errbg:#3A1714; --info:#9DBCEB; --infobg:#18283D;
-    --field:#141B22; --car:#7FADF2; --pay:#F0C27F; --paybg:#2B2216;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#11171D; --card:#19212A; --ink:#E7ECF1; --sub:#9AA7B4; --line:#2D3944;
-  --accent:#7FADF2; --accent-ink:#0C1722; --accent-soft:#1B2C44;
-  --band:#1F3F66; --band-ink:#F2F7FF; --band-sub:#A9C0DE;
-  --ok:#5FD39A; --okbg:#12301F; --warn:#F0B75A; --warnbg:#33270F;
-  --err:#FF9A90; --errbg:#3A1714; --info:#9DBCEB; --infobg:#18283D;
-  --field:#141B22; --car:#7FADF2; --pay:#F0C27F; --paybg:#2B2216;
 }
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 90px);-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+  font-family:var(--sg-font);
   font-size:16px;line-height:1.6;font-variant-numeric:tabular-nums}
 main{max-width:640px;margin:0 auto;padding:0 14px 56px}
 h1{font-size:1.35rem;margin:18px 0 4px}
