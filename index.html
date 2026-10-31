@@ -23,7 +23,7 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 90px);-webkit-text-s
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:var(--sg-font);
   font-size:16px;line-height:1.6;font-variant-numeric:tabular-nums}
-main{max-width:640px;margin:0 auto;padding:0 14px 56px}
+main{max-width:var(--sg-page-w,560px);margin:0 auto;padding:0 14px 56px}
 h1{font-size:1.35rem;margin:18px 0 4px}
 h2{font-size:1.05rem;margin:0 0 8px}
 p{margin:0}
@@ -105,7 +105,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .sentchk input{width:24px;height:24px;accent-color:var(--ok)}
 .trip-del{margin-top:14px}
 .trip-head{display:flex;justify-content:flex-end;margin:0 0 10px}
-.delbtn{border:1px solid var(--err);background:var(--card);color:var(--err);border-radius:10px;min-height:44px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:.92rem}
+.delbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--err);background:var(--card);color:var(--err);border-radius:10px;min-height:44px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:.92rem}
 .delbtn.wide{width:100%}
 .delbtn[data-arm]{background:var(--err);color:#fff}
 
@@ -275,7 +275,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 <main>
   <div id="loading" class="loading">読み込み中…</div>
   <div id="v-home" hidden>
-    <h1>移動経費かんたん計算</h1>
+    <header class="sg-head">
+      <div>
+        <div class="sg-eyebrow">Sieg 業務ポータル</div>
+        <h1 class="sg-title">移動経費</h1>
+        <div class="sg-sub">かんたん計算</div>
+      </div>
+    </header>
     <p class="lead">稼働が終わったら、その稼働の分だけ入れて送ります。自宅・現場・ホテルと距離を登録しておくと、プルダウンで選ぶだけになります。</p>
     <div id="alerts"></div>
     <div class="homebtns">
@@ -612,7 +618,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     var rs=RATES.map(function(v){return '<button type="button" data-act="rate" data-v="'+v+'" aria-pressed="'+(+t.rate===v)+'">'+v+'円/km</button>';}).join('');
     var days='';for(var i=0;i<t.days.length;i++)days+=dayHTML(t,i);
     return '<article class="trip" data-trip="'+t.id+'">'
-      +'<div class="trip-head"><button type="button" class="delbtn" data-act="deltrip">🗑 この稼働を消す</button></div>'
+      +'<div class="trip-head"><button type="button" class="delbtn" data-act="deltrip"><svg class="sg-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg> この稼働を消す</button></div>'
       +'<label class="f">現場</label>'+siteSelect(t)+'<button type="button" class="linkbtn" data-act="goreg">登録した場所・距離を見る・直す</button>'
       +(form&&form.target==='site'?formHTML():'')
       +'<div class="q"><span class="f">日にち</span><div class="dayrow"><input type="date" data-f="start" value="'+esc(t.start)+'" aria-label="開始日">'
@@ -630,7 +636,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       +'<p class="dayinfo" id="photos"></p>'
       +'<div class="send"><button type="button" class="btn primary wide" data-act="copytrip">文章をコピー</button>'
       +'<label class="sentchk"><input type="checkbox" data-f="sent"'+(t.sent?' checked':'')+'>LINEに送った（写真も一緒に）</label></div>'
-      +'<div class="trip-del"><button type="button" class="delbtn wide" data-act="deltrip">🗑 この稼働を消す</button></div>'
+      +'<div class="trip-del"><button type="button" class="delbtn wide" data-act="deltrip"><svg class="sg-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg> この稼働を消す</button></div>'
       +'</article>';
   }
   function renderReg(){
