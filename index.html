@@ -265,7 +265,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 .savest{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:20;background:var(--ink);color:var(--card);border-radius:999px;padding:6px 12px;font-size:.8rem;font-weight:700;opacity:.88;pointer-events:none}
 .savest.bad{background:var(--err);color:#fff}
-.loading{padding:40px 10px;text-align:center;color:var(--sub)}
+.loading{padding:12px 0;color:var(--sub)}   /* 中身は sieg-theme.css の .sg-skel（形だけの枠） */
 .lh .mapok{color:var(--info);font-size:.82rem;font-weight:700}
 .lh .maperr{color:var(--err);font-size:.82rem}
 .hwseg button{min-height:48px;font-size:.95rem}
@@ -273,7 +273,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 </head>
 <body>
 <main>
-  <div id="loading" class="loading">読み込み中…</div>
+  <div id="loading" class="loading"><div class="sg-skel-wrap" aria-busy="true" aria-label="読み込み中"><div class="sg-skel card"></div><div class="sg-skel card"></div><div class="sg-skel card"></div></div></div>
   <div id="v-home" hidden>
     <header class="sg-head">
       <div>
