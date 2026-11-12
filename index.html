@@ -269,6 +269,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 .lh .mapok{color:var(--info);font-size:.82rem;font-weight:700}
 .lh .maperr{color:var(--err);font-size:.82rem}
 .hwseg button{min-height:48px;font-size:.95rem}
+/* 「そのほか」の折りたたみ：何が入っているか分かるように、見出しと説明・開く印を付ける */
+.fold{margin-top:8px}
+.fold summary{list-style:none;justify-content:space-between;gap:10px;min-height:48px;color:var(--ink)}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary b{display:block;font-size:.95rem;font-weight:800}
+.fold summary small{display:block;font-size:.8rem;color:var(--sub);font-weight:400;margin-top:1px}
+.fold summary::after{content:'';flex:none;width:9px;height:9px;border-right:2px solid var(--sub);border-bottom:2px solid var(--sub);transform:rotate(45deg);margin:0 4px 4px 0;transition:transform .15s}
+.fold[open] summary::after{transform:rotate(-135deg);margin:4px 4px 0 0}
 </style>
 </head>
 <body>
@@ -282,22 +290,27 @@ button,input,select,textarea{font:inherit;color:inherit}
         <div class="sg-sub">かんたん計算</div>
       </div>
     </header>
-    <p class="lead">稼働が終わったら、その稼働の分だけ入れて送ります。自宅・現場・ホテルと距離を登録しておくと、プルダウンで選ぶだけになります。</p>
+    <p class="sg-lead">稼働が終わったら、その稼働の分を入れて送ります。</p>
     <div id="alerts"></div>
     <div class="homebtns">
       <button type="button" class="btn primary wide big" data-act="addtrip">＋ 新しい稼働を入力する</button>
       <button type="button" class="btn wide reg-entry" data-act="goreg">自宅・現場・ホテル・距離を登録する</button>
+      <p class="hint" style="text-align:center">登録しておくと、入力のときに選ぶだけになります</p>
     </div>
     <section class="sec">
       <h2>稼働の一覧</h2>
-      <p class="hint">押すとその稼働を開きます。赤い「未送信」が残らないようにします。間違えて入れた稼働は、開いて右上の「この稼働を消す」で消せます。</p>
+      <p class="hint">押すと開きます。赤い「未送信」が残らないようにします。</p>
       <div class="list" id="list"></div>
-      <details class="months"><summary>月の合計を見る（聞かれたとき用）</summary><div id="months"></div></details>
     </section>
-    <details class="settings">
-      <summary>その他</summary>
+    <section class="sec">
+      <h2>そのほか</h2>
+      <details class="months fold"><summary><span><b>月ごとの合計</b><small>聞かれたときに、金額をコピーできます</small></span></summary><div id="months"></div></details>
+      <details class="settings fold">
+      <summary><span><b>このツールについて</b><small>保存のしかた・消し方・計算のきまり</small></span></summary>
+      <p>間違えて入れた稼働は、開いて右上の「この稼働を消す」で消せます。</p>
       <p>入力・登録した内容はスプレッドシートに保存されます。どのスマホ・パソコンで開いても同じ内容です。距離は四捨五入した整数kmで、金額の1円未満も四捨五入です。</p>
     </details>
+    </section>
   </div>
 
   <div id="v-trip" hidden>
@@ -401,14 +414,18 @@ button,input,select,textarea{font:inherit;color:inherit}
     dirty=false;saving=true;setSt('保存中…');
     var fail=function(){saving=false;dirty=true;setSt('保存できませんでした。もう一度試します',true);saveTimer=setTimeout(flush,5000);};
     GS().withSuccessHandler(function(json){
-        if(base!==null&&canon(json)!==base&&!confirm('別の端末（または別のタブ）でこのデータが更新されています。\n\nOK：この画面の内容で上書きする\nキャンセル：別の端末の内容を読み込み直す（この画面での変更は消えます）')){
+        var write=function(){
+          var out=JSON.stringify(S);
+          GS().withSuccessHandler(function(){saving=false;base=canon(out);if(!dirty)backup(false);setSt(dirty?'保存待ち…':'保存しました');})
+            .withFailureHandler(fail)
+            .saveState(out,listRows());
+        };
+        if(base===null||canon(json)===base){write();return;}
+        ask('別の端末でこのデータが更新されています','「上書きする」：この画面の内容で上書きします。\n「読み込み直す」：別の端末の内容を読み込みます（この画面での変更は消えます）。','上書きする','読み込み直す').then(function(yes){
+          if(yes){write();return;}
           saving=false;dirty=false;S=parseState(json);base=canon(json);backup(false);
-          setSt('別の端末の内容を読み込みました');renderReg();go('home');return;
-        }
-        var out=JSON.stringify(S);
-        GS().withSuccessHandler(function(){saving=false;base=canon(out);if(!dirty)backup(false);setSt(dirty?'保存待ち…':'保存しました');})
-          .withFailureHandler(fail)
-          .saveState(out,listRows());
+          setSt('別の端末の内容を読み込みました');renderReg();go('home');
+        });
       })
       .withFailureHandler(fail)
       .loadState();
@@ -671,7 +688,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     $('list').innerHTML=T.length?T.map(function(t){
       var bd=t.sent?'<span class="badge sent">送信済み</span>':'<span class="badge unsent">未送信</span>';
       return '<button type="button" class="li" data-act="open" data-v="'+t.id+'"><span class="nm">'+esc(name(t))+'</span><span class="am">'+yen(total(t))+'</span><span class="pd">'+span(t.start,endDate(t))+(rate(t)?'・'+rate(t)+'円/km':'')+'</span>'+bd+'</button>';
-    }).join(''):'<div class="li" style="cursor:default"><span class="pd">まだありません</span></div>';
+    }).join(''):emptyHtml('まだ稼働がありません','上の「＋ 新しい稼働を入力する」から始めます');
     var late=T.filter(function(t){return !t.sent&&(t.rows.length||carDays(t).length);});
     $('alerts').innerHTML=late.length?'<div class="alert">送っていない稼働があります：'+late.map(function(t){return '<button type="button" data-act="open" data-v="'+t.id+'">'+esc(span(t.start,endDate(t))+' '+name(t))+'</button>';}).join('、')+'</div>':'';
     var m={};
@@ -680,7 +697,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     var ks=Object.keys(m).sort().reverse();
     $('months').innerHTML=ks.length?ks.map(function(k){var p=k.split('-');
       return '<div class="mrow"><span>'+p[0]+'年'+(+p[1])+'月：<b>'+yen(m[k].sum)+'</b>（'+Object.keys(m[k].trips).length+'稼働）</span><button type="button" class="btn" data-act="copymonthsum" data-v="'+k+'">コピー</button></div>';}).join('')
-      :'<p class="hint">まだありません</p>';
+      :emptyHtml('まだありません','稼働を入れると、月ごとの合計がここに出ます');
   }
   function monthSumText(k){
     var lines=[],sum=0,mm=+k.split('-')[1];
@@ -837,18 +854,31 @@ button,input,select,textarea{font:inherit;color:inherit}
     if(f==='start'&&e.type==='change')renderCurrent();
   }
   document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
+  /* 確認は、ほかのツールと同じ画面下のシートで聞く（Apps Script の中で開いたときなど、部品が無ければブラウザの確認） */
+  function ask(title,msg,ok,cancel){
+    if(window.SiegNav&&SiegNav.confirm)return SiegNav.confirm(msg,{title:title,ok:ok,cancel:cancel});
+    return Promise.resolve(confirm(title+'\n\n'+msg));
+  }
+  function emptyHtml(title,hint){
+    return window.SiegNav&&SiegNav.empty?SiegNav.empty(title,hint):'<p class="hint">'+title+'</p>';
+  }
   function boot(){
     if(!hasGS()){S=blank();$('loading').textContent='スプレッドシートにつながっていません（このページはApps Scriptのウェブアプリとして開いてください）';return;}
     GS().withSuccessHandler(function(json){
         S=parseState(json);base=canon(json);
         var b=readBackup();
+        var start=function(){$('loading').hidden=true;renderReg();go('home');};
+        var resend=function(){S=parseState(JSON.stringify(b.s));save();setSt('前回保存できなかった変更を送り直しています…');};
         if(b&&b.pending){
           /* 前回スプレッドシートへ送れなかった変更がこの端末に残っている */
-          if(b.base===base||confirm('この端末に、スプレッドシートへ保存できていない変更が残っています。\nその後ほかの端末でも更新されています。\n\nOK：この端末の変更で上書きする\nキャンセル：スプレッドシートの内容を使う（この端末の変更は捨てる）')){
-            S=parseState(JSON.stringify(b.s));save();setSt('前回保存できなかった変更を送り直しています…');
-          }else backup(false);
-        }else backup(false);
-        $('loading').hidden=true;renderReg();go('home');})
+          if(b.base===base){resend();start();return;}
+          ask('この端末に、保存できていない変更が残っています','そのあと、ほかの端末でも更新されています。\n「上書きする」：この端末の変更で上書きします。\n「捨てる」：スプレッドシートの内容を使います（この端末の変更は捨てます）。','上書きする','捨てる').then(function(yes){
+            if(yes)resend();else backup(false);
+            start();
+          });
+          return;
+        }
+        backup(false);start();})
       .withFailureHandler(function(){$('loading').textContent='読み込めませんでした。ページを開き直してください';})
       .loadState();
   }
